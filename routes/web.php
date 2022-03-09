@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Livewire\Game;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,9 +14,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', Game::class)->name('home');
 
 Route::view('blog', 'blog.intro')->name('blog.intro');
 Route::view('blog.chapter-1', 'blog.chapter-1')->name('blog.chapter-1');
