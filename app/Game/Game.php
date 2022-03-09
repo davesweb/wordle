@@ -61,7 +61,7 @@ class Game
     private function assertValidGuess(string $guess): void
     {
         if (strlen($guess) !== strlen($this->getCurrentWord())) {
-            throw new Exception('Incorrect length. The length should be ' . strlen($this->getCurrentWord()) . ' letters long.')
+            throw new Exception('Incorrect length. The length should be ' . strlen($this->getCurrentWord()) . ' letters long.');
         }
 
         if (!$this->dictionary->existsInList($guess)) {
