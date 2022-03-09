@@ -2,7 +2,9 @@
 
 namespace App\Game;
 
+use App\Game\Enums\Result;
 use App\Game\Words\WordGenerator;
+use Exception;
 use Illuminate\Session\Store;
 
 class Game
@@ -22,7 +24,26 @@ class Game
 
     public function guess(string $guess): array
     {
+        $guess = strtolower($guess);
+
+        $this->assertValidGuess($guess);
+
         $this->addGuess($guess);
+
+        $result = [];
+        $currentWord = str_split($this->getCurrentWord());
+
+        foreach(str_split($guess) as $index => $letter) {
+            $result[$index] = Result::Incorrect;
+
+            if ($currentWord[$index] === $letter) {
+                $result[$index] = Result::Correct;
+            } elseif (in_array($letter, $currentWord, true)) {
+                $result[$index] = Result::InWord;
+            }
+        }
+
+        return $result;
     }
 
     public function hasWon(): bool
@@ -35,6 +56,17 @@ class Game
     {
         // If the maximum number of tries is reached and the word is still not correct, the game is lost
         return $this->countGuesses() >= $this->maxTries && !$this->hasWon();
+    }
+
+    private function assertValidGuess(string $guess): void
+    {
+        if (strlen($guess) !== strlen($this->getCurrentWord())) {
+            throw new Exception('Incorrect length. The length should be ' . strlen($this->getCurrentWord()) . ' letters long.')
+        }
+
+        if (!$this->dictionary->existsInList($guess)) {
+            throw new Exception('Invalid word.');
+        }
     }
 
     private function addGuess(string $guess): void
