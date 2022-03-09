@@ -58,6 +58,11 @@ class Game
         return $this->countGuesses() >= $this->maxTries && !$this->hasWon();
     }
 
+    public function isPlaying(): bool
+    {
+        return $this->getCurrentWord() !== null && !$this->hasWon() && !$this->hasLost();
+    }
+
     private function assertValidGuess(string $guess): void
     {
         if (strlen($guess) !== strlen($this->getCurrentWord())) {
@@ -66,6 +71,10 @@ class Game
 
         if (!$this->dictionary->existsInList($guess)) {
             throw new Exception('Invalid word.');
+        }
+
+        if (in_array($guess, $this->getGuesses(), true)) {
+            throw new Exception('Already tried that word. Try another word.');
         }
     }
 
@@ -78,7 +87,7 @@ class Game
         $this->session->put('guesses', $guesses);
     }
 
-    private function getCurrentWord(): string
+    public function getCurrentWord(): ?string
     {
         return $this->session->get('currentWord');
     }
