@@ -9,6 +9,9 @@ use Exception;
 use Illuminate\View\View;
 use Livewire\Component;
 
+/**
+ * @property-read WordleGame $wordleGame
+ */
 class Game extends Component
 {
     protected $listeners = [

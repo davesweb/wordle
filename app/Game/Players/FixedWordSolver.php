@@ -48,7 +48,7 @@ abstract class FixedWordSolver extends WordPlayer
 
     public function getName(): string
     {
-        return 'Fixed word solver';
+        return 'Fixed word solver ('.implode(', ', $this->words).')';
     }
 
     public function getDescription(): string

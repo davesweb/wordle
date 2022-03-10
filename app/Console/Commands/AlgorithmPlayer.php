@@ -9,6 +9,7 @@ use App\Game\Players\QuickNymphBoard;
 use App\Game\Players\QuickWaltzFjord;
 use App\Game\Players\RandomWordPlayer;
 use App\Game\Words\TextWordProvider;
+use App\Game\Words\WordProvider;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 
@@ -37,40 +38,14 @@ class AlgorithmPlayer extends Command
             return $this->playAllAlgorithms($rounds, $game);
         }
 
-        $wins = 0;
-        $triesResult = [];
+        $results = [];
 
-        $this->withProgressBar($rounds, function(ProgressBar $bar) use ($rounds, $algorithm, $game, &$wins, &$triesResult) {
-            for ($i = 0; $i < $rounds; $i++) {
-                $tries = 0;
-                /** @var Player $player */
-                $player = resolve($algorithm);
-
-                $game->start();
-
-                $result = $player->solve($game, new TextWordProvider(resource_path('game/words.txt')), $tries);
-
-                $bar->advance();
-
-                if (is_string($result)) {
-                    ++$wins;
-                    $triesResult[] = $tries;
-                }
-            }
+        $this->withProgressBar($rounds, function(ProgressBar $bar) use ($rounds, $algorithm, $game, &$results) {
+            $results[] = $this->play(resolve($algorithm), $game,  new TextWordProvider(resource_path('game/words.txt')), $rounds, $bar);
         });
 
         $this->newLine(2);
-
-        $avgTries = array_sum($triesResult) / count($triesResult);
-
-        $this->table($this->tableHeadings(), [[
-            $algorithm,
-            $wins,
-            round(($wins / $rounds) * 100, 2) . '%',
-            round($avgTries, 4) . ' (' . ceil($avgTries) . ')',
-            $rounds - $wins,
-            round((($rounds - $wins) / $rounds) * 100, 2) . '%',
-        ]]);
+        $this->table($this->tableHeadings(), $results);
 
         return parent::SUCCESS;
     }
@@ -85,36 +60,7 @@ class AlgorithmPlayer extends Command
                     continue;
                 }
 
-                $wins = 0;
-                $triesResult = [];
-
-                for ($i = 0; $i < $rounds; $i++) {
-                    $tries = 0;
-                    /** @var Player $player */
-                    $player = resolve($algorithm);
-
-                    $game->start();
-
-                    $result = $player->solve($game, new TextWordProvider(resource_path('game/words.txt')), $tries);
-
-                    $bar->advance();
-
-                    if (is_string($result)) {
-                        ++$wins;
-                        $triesResult[] = $tries;
-                    }
-                }
-
-                $avgTries = array_sum($triesResult) / count($triesResult);
-
-                $rows[] = [
-                    $algorithm,
-                    $wins,
-                    round(($wins / $rounds) * 100, 2) . '%',
-                    round($avgTries, 4) . ' (' . ceil($avgTries) . ')',
-                    $rounds - $wins,
-                    round((($rounds - $wins) / $rounds) * 100, 2) . '%',
-                ];
+                $rows[] = $this->play(resolve($algorithm), $game, new TextWordProvider(resource_path('game/words.txt')), $rounds, $bar);
             }
         });
 
@@ -122,6 +68,38 @@ class AlgorithmPlayer extends Command
         $this->table($this->tableHeadings(), $rows);
 
         return parent::SUCCESS;
+    }
+
+    protected function play(Player $player, Game $game, WordProvider $dictionary, int $rounds, ?ProgressBar $bar = null): array
+    {
+        $wins = 0;
+        $triesResult = [];
+
+        for ($i = 0; $i < $rounds; $i++) {
+            $tries = 0;
+
+            $game->start();
+
+            $result = $player->solve($game, $dictionary, $tries);
+
+            $bar?->advance();
+
+            if (is_string($result)) {
+                ++$wins;
+                $triesResult[] = $tries;
+            }
+        }
+
+        $avgTries = array_sum($triesResult) / count($triesResult);
+
+        return [
+            $player->getName(),
+            $wins,
+            round(($wins / $rounds) * 100, 2) . '%',
+            round($avgTries, 4) . ' (' . ceil($avgTries) . ')',
+            $rounds - $wins,
+            round((($rounds - $wins) / $rounds) * 100, 2) . '%',
+        ];
     }
 
     protected function getAlgorithms(): array
