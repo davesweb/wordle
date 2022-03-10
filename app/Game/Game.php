@@ -119,4 +119,9 @@ class Game
 
         return end($guesses);
     }
+
+    public function getMaxTries(): int
+    {
+        return $this->maxTries;
+    }
 }
