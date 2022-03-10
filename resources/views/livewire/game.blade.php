@@ -1,40 +1,62 @@
 <div x-data="{init: document.addEventListener('keyup', e => window.Livewire.emit('addLetter', e.key), false)}">
+    <div id="options" class="flex justify-between mb-2 items-center">
+        <div>
+            <button class="bg-slate-200 text-slate-900 border-slate-300 hover:bg-slate-300 hover:border-slate-400 dark:bg-slate-500 dark:text-slate-100 dark:border-slate-400 dark:border-2 dark:hover:bg-slate-600 dark:hover:border-slate-500 border p-2 rounded text-sm" wire:click="newGame()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
+        <div>
+            <button type="button" data-dark data-toggle="toggle" class="bg-gray-200 dark:bg-slate-700 relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500" role="switch" aria-checked="false">
+                <span class="sr-only">Dark mode</span>
+                <span aria-hidden="true" class="translate-x-0 pointer-events-none inline-block h-5 w-5 rounded-full bg-white dark:bg-slate-500 shadow transform ring-0 transition ease-in-out duration-200"></span>
+            </button>
+        </div>
+    </div>
     <div id="guesses" class="guesses mb-5">
         @foreach($this->guesses as $previousGuess => $result)
             <div class="row grid grid-cols-5 gap-5 mb-3">
                 @foreach(str_split($previousGuess) as $index => $letter)
-                    <div class="letter border rounded border-slate-400 p-4 text-center font-medium text-lg guess @if($result[$index] === 1 || $result[$index] === \App\Game\Enums\Result::Correct) bg-green-500 text-white @endif @if($result[$index] === 2 || $result[$index] === \App\Game\Enums\Result::InWord) bg-yellow-500 text-white @endif @if($result[$index] === 0 || $result[$index] === \App\Game\Enums\Result::Incorrect) bg-slate-400 text-white @endif">{{ str($letter)->upper() }}</div>
+                    <div class="letter border rounded border-slate-400 dark:border-slate-600 dark:border-2 dark:text-slate-100 p-4 text-center font-medium text-lg guess @if($result[$index] === 1 || $result[$index] === \App\Game\Enums\Result::Correct) bg-green-500 text-white @endif @if($result[$index] === 2 || $result[$index] === \App\Game\Enums\Result::InWord) bg-yellow-500 text-white @endif @if($result[$index] === 0 || $result[$index] === \App\Game\Enums\Result::Incorrect) bg-slate-400 dark:bg-slate-900 text-white @endif">{{ str($letter)->upper() }}</div>
                 @endforeach
             </div>
         @endforeach
         @if(count($this->guesses) < 6)
             <div class="row grid grid-cols-5 gap-5 mb-3">
                 @foreach($this->letters as $letter)
-                    <div class="letter border rounded border-slate-400 p-4 text-center font-medium text-lg guess">{{ str($letter)->upper() }}</div>
+                    <div class="letter border rounded border-slate-400 dark:border-slate-600 dark:border-2 dark:text-slate-100 p-4 text-center font-medium text-lg guess">{{ str($letter)->upper() }}</div>
                 @endforeach
                 @for($i = 0; $i < 5 - count($this->letters); $i++)
-                        <div class="letter border rounded border-slate-400 p-4 text-center font-medium text-lg guess">&nbsp;</div>
+                        <div class="letter border rounded border-slate-400 dark:border-slate-600 dark:border-2 dark:text-slate-100 p-4 text-center font-medium text-lg guess">&nbsp;</div>
                 @endfor
             </div>
         @endif
         @for($i = 0; $i < $this->maxTries - count($this->guesses) - 1; $i++)
             <div class="row grid grid-cols-5 gap-5 mb-3">
-                <div class="letter border rounded border-slate-300 p-4 text-center font-medium text-lg guess">&nbsp;</div>
-                <div class="letter border rounded border-slate-300 p-4 text-center font-medium text-lg guess">&nbsp;</div>
-                <div class="letter border rounded border-slate-300 p-4 text-center font-medium text-lg guess">&nbsp;</div>
-                <div class="letter border rounded border-slate-300 p-4 text-center font-medium text-lg guess">&nbsp;</div>
-                <div class="letter border rounded border-slate-300 p-4 text-center font-medium text-lg guess">&nbsp;</div>
+                @for($j = 0; $j < 5; $j++)
+                    <div class="letter border rounded border-slate-300 dark:border-slate-700 dark:border-2 dark:text-slate-100 p-4 text-center font-medium text-lg guess">&nbsp;</div>
+                @endfor
             </div>
         @endfor
     </div>
     <div id="messages" class="messages mb-5 flex justify-center">
-        <input wire:model="error" /> {{ $success }}
+        @if($error)
+            <div class="border border-red-600 bg-red-200 text-red-600 p-2 rounded dark:border-red-600 dark:bg-red-800 dark:text-red-100">
+                {{ $error }}
+            </div>
+        @endif
+        @if($success)
+            <div class="border border-green-600 bg-green-200 text-green-600 p-2 rounded dark:border-green-600 dark:bg-green-800 dark:text-green-100">
+                {{ $success }}
+            </div>
+        @endif
     </div>
     <div class="keyboard mb-5">
         @foreach($this->keyboard as $row => $letters)
             <div class="row flex mb-2">
                 @foreach($letters as $letter)
-                    <button class="letter border rounded border-slate-300 bg-slate-300 py-2 text-sm font-medium grow mr-1" wire:click="addLetter('{{ $letter }}')">{{ $letter }}</button>
+                    <button class="letter border rounded py-2 text-sm font-medium grow mr-1 dark:border-2 @if($this->letterUsed($letter)) dark:bg-slate-700 dark:border-slate-700 dark:text-slate-100 bg-slate-400 text-slate-900 @else border-slate-300 bg-slate-300 dark:bg-slate-600 dark:text-slate-100 dark:border-slate-500 @endif" wire:click="addLetter('{{ $letter }}')">{{ $letter }}</button>
                 @endforeach
             </div>
         @endforeach

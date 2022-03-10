@@ -38,7 +38,7 @@ class Game extends Component
 
     public function newGame(): void
     {
-        $this->wordleGame()->start();
+        $this->wordleGame->start();
 
         $this->guesses = [];
         $this->letters = [];
@@ -53,24 +53,41 @@ class Game extends Component
 
     public function addLetter(string $letter): void
     {
-        if (in_array(strtoupper($letter), range('A', 'Z'), true) && count($this->letters) < 5 && $this->wordleGame()->isPlaying()) {
+        if (in_array(strtoupper($letter), range('A', 'Z'), true) && count($this->letters) < 5 && $this->wordleGame->isPlaying()) {
+            $this->error = null;
+            $this->success = null;
+
             $this->letters[] = strtoupper($letter);
         }
 
-        if ($letter === '⌫' || $letter === 'Backspace' && $this->wordleGame()->isPlaying()) {
+        if ($letter === '⌫' || $letter === 'Backspace' && $this->wordleGame->isPlaying()) {
+            $this->error = null;
+            $this->success = null;
+
             array_pop($this->letters);
         }
 
         if ($letter === 'Enter') {
-            if ($this->wordleGame()->isPlaying()) {
+            $this->error = null;
+            $this->success = null;
+
+            if ($this->wordleGame->isPlaying()) {
                 $this->guess();
             } else {
                 $this->newGame();
             }
         }
+    }
 
-        $this->error = null;
-        $this->success = null;
+    public function letterUsed(string $letter): bool
+    {
+        foreach($this->guesses as $guess => $result) {
+            if (in_array($letter, str_split($guess))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function guess()
@@ -78,24 +95,30 @@ class Game extends Component
         $guess = implode('', $this->letters);
 
         try {
-            $result = $this->wordleGame()->guess($guess);
+            $result = $this->wordleGame->guess($guess);
 
             $this->guesses[$guess] = $result;
 
             $this->letters = [];
+
+            if ($this->wordleGame->hasLost()) {
+                $this->error = 'You lost! The word was ' . $this->wordleGame->getCurrentWord() . '. Press enter to try again.';
+            }
+
+            if ($this->wordleGame->hasWon()) {
+                $this->success = 'You won! Congratulations! Press enter for the next word.';
+            }
         } catch (Exception $e) {
             $this->error = $e->getMessage();
-
-            $this->emit('$refresh');
         }
     }
 
-    protected function wordleGame(): WordleGame
+    public function getWordleGameProperty(): WordleGame
     {
         return new WordleGame(
             resolve(WordGenerator::class),
             resolve('session.store'),
-            6
+            $this->maxTries,
         );
     }
 }

@@ -5641,6 +5641,53 @@ __webpack_require__(/*! ./bootstrap */ "./resources/js/bootstrap.js");
 
 
 window.Alpine = alpinejs__WEBPACK_IMPORTED_MODULE_0__["default"];
+var toggleButtons = document.querySelectorAll('[data-toggle="toggle"]');
+toggleButtons.forEach(function (element, index, original) {
+  element.addEventListener('click', function (event) {
+    var span = element.querySelector('[aria-hidden="true"]');
+    span.classList.toggle('translate-x-0');
+    span.classList.toggle('translate-x-5');
+    span.classList.toggle('bg-orange-500');
+    span.classList.toggle('dark:bg-orange-500');
+    span.classList.toggle('bg-white');
+    span.classList.toggle('dark:bg-slate-500');
+  });
+});
+document.querySelectorAll('[data-dark]').forEach(function (element, index, original) {
+  element.addEventListener('click', function (event) {
+    if (localStorage.theme === 'dark') {
+      localStorage.theme = 'light';
+      document.documentElement.classList.remove('dark');
+    } else {
+      localStorage.theme = 'dark';
+      document.documentElement.classList.add('dark');
+    }
+  });
+});
+
+if (localStorage.theme === 'dark' || !('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.querySelectorAll('[data-toggle="toggle"]').forEach(function (element) {
+    var span = element.querySelector('[aria-hidden="true"]');
+
+    if (span.classList.contains('translate-x-0')) {
+      span.classList.remove('translate-x-0');
+      span.classList.add('translate-x-5');
+      span.classList.add('bg-orange-500');
+      span.classList.add('dark:bg-orange-500');
+      span.classList.remove('bg-white');
+      span.classList.remove('dark:bg-slate-500');
+    }
+  });
+  document.documentElement.classList.add('dark');
+} else {
+  document.documentElement.classList.remove('dark');
+}
+
+document.querySelectorAll('button').forEach(function (element) {
+  element.addEventListener('mousedown', function (event) {
+    event.preventDefault();
+  });
+});
 alpinejs__WEBPACK_IMPORTED_MODULE_0__["default"].start();
 
 /***/ }),

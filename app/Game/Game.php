@@ -32,13 +32,20 @@ class Game
 
         $result = [];
         $currentWord = str_split($this->getCurrentWord());
+        // Keep track of the letters left in the word which haven't been marked as green or yellow.
+        // This will make sure that if the player guesses a word with repeat letters ('error' for instance), and the current
+        // word contains that letter, but fewer times than the guess ('roads' for instance) only one of the repeated
+        // letters in the guess is marked yellow
+        $lettersLeft = str_split($this->getCurrentWord());
 
         foreach(str_split($guess) as $index => $letter) {
             $result[$index] = Result::Incorrect;
 
             if ($currentWord[$index] === $letter) {
                 $result[$index] = Result::Correct;
-            } elseif (in_array($letter, $currentWord, true)) {
+                unset($lettersLeft[$index]);
+            } elseif (in_array($letter, $lettersLeft, true)) {
+                unset($lettersLeft[array_search($letter, $lettersLeft)]);
                 $result[$index] = Result::InWord;
             }
         }
