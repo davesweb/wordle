@@ -2,6 +2,7 @@
 
 namespace App\Game;
 
+use App\Game\Enums\Result as ResultEnum;
 use App\Game\ValueObjects\Result;
 use App\Game\Words\TextWordProvider;
 use App\Game\Words\WordGenerator;
@@ -17,7 +18,6 @@ final class Game
         int $startingLives = 3,
     ) {
         $this->session->put('startingLives', $startingLives);
-
 
         $this->wordle = $this->createWordleGame(new TextWordProvider(resource_path('game/words.txt')));
     }
@@ -37,6 +37,8 @@ final class Game
         $this->session->put('score', $score);
         $this->session->put('currentLives', $lives ?? $this->session->get('startingLives'));
         $this->session->put('gamesPlayed', 0);
+        $this->session->put('boughtLetter');
+        $this->session->put('buyLetterPrice', $this->wordle->getMaxTries() * 25);
     }
 
     public function createWordleGame(WordProvider $dictionary, int $maxTries = 6): Wordle
@@ -46,6 +48,8 @@ final class Game
 
     public function startWordleGame(): void
     {
+        $this->session->put('boughtLetter');
+
         $this->wordle->start();
     }
 
@@ -63,11 +67,15 @@ final class Game
             $lives = $this->calculateLives($this->wordle->getMaxTries(), $tries);
             $newLives = $this->addLives($lives);
 
+            $this->session->put('boughtLetter');
+
             return new Result($result, $newScore, $score, $newLives, $lives, true, false);
         }
 
         if ($this->wordle->hasLost()) {
             $newLives = $this->addLives(-1);
+
+            $this->session->put('boughtLetter');
 
             return new Result($result, $this->getScore(), 0, $newLives, -1, false, true, $this->wordle->getCurrentWord());
         }
@@ -142,5 +150,65 @@ final class Game
     public function currentWord(): string
     {
         return $this->wordle->getCurrentWord();
+    }
+
+    public function canBuyLetter(): bool
+    {
+        // A player can buy a letter when he is at a try that doesn't reward extra lives if he guesses correctly, if he hasn't bought a letter before and if he
+        // has enough points to spend. He can also only buy a letter while paying.
+        if (!$this->wordle->isPlaying()) {
+            return false;
+        }
+
+        if ($this->wordle->countGuesses() === 0 || $this->calculateLives($this->wordle->getMaxTries(), $this->wordle->countGuesses()) > 0) {
+            return false;
+        }
+
+        if ($this->getBoughtLetter() !== null) {
+            return false;
+        }
+
+        if ($this->getScore() < $this->getBuyLetterPrice()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function getBoughtLetter(): ?array
+    {
+        return $this->session->get('boughtLetter');
+    }
+
+    public function getBuyLetterPrice(): int
+    {
+        return $this->session->get('buyLetterPrice');
+    }
+
+    public function buyLetter(): array
+    {
+        // We don't want to give the player a letter he already knows, that would defeat the purpose of buying a letter in the first place. So check all
+        // previous guesses and return a letter the player doesn't know yet.
+        $maxIndex = strlen($this->wordle->getCurrentWord()) - 1;
+        $indexesAvailable = $this->wordle->getNonGuessedIndexes();
+
+        $this->addScore($this->getBuyLetterPrice() * -1);
+
+        if (count($indexesAvailable) === 0) {
+            // Every position is already known, return a random letter
+            $randomIndex = random_int(0, $maxIndex);
+
+            $this->session->put('boughtLetter', [$randomIndex => str_split($this->currentWord()[$randomIndex])]);
+
+            return $this->getBoughtLetter();
+        }
+
+        // Select a random index from the list
+        $randomKey = array_rand($indexesAvailable);
+        $randomIndex = $indexesAvailable[$randomKey];
+
+        $this->session->put('boughtLetter', [$randomIndex => strtoupper(str_split($this->currentWord())[$randomIndex])]);
+
+        return $this->getBoughtLetter();
     }
 }

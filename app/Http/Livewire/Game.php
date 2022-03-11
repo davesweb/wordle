@@ -40,6 +40,8 @@ class Game extends Component
 
     public int $livesMutation = 0;
 
+    public bool $canBuyLetter = false;
+
     public function mount(): void
     {
         $this->game->start();
@@ -65,6 +67,7 @@ class Game extends Component
         $this->letters = [];
         $this->success = null;
         $this->error = null;
+        $this->canBuyLetter = $this->game->canBuyLetter();
     }
 
     public function render(): View
@@ -138,6 +141,8 @@ class Game extends Component
             $this->scoreMutation = $result->scoreMutation;
             $this->lives = $result->lives;
             $this->livesMutation = $result->livesMutation;
+            $this->canBuyLetter = $this->game->canBuyLetter();
+            //dd($this->game->canBuyLetter());
         } catch (Exception $e) {
             $this->error = $e->getMessage();
         }
@@ -151,5 +156,24 @@ class Game extends Component
     public function getWordProperty(): string
     {
         return $this->game->currentWord();
+    }
+
+    public function getBoughtLetter(int $index): ?string
+    {
+        return $this->game->getBoughtLetter()[$index] ?? null;
+    }
+
+    public function buyLetter(): array
+    {
+        // Reset the letters to make sure the player sees the bought letter.
+        $this->letters = [];
+
+        $result = $this->game->buyLetter();
+
+        $this->scoreMutation = $this->game->getBuyLetterPrice() * -1;
+        $this->score = $this->game->getScore();
+        $this->canBuyLetter = $this->game->canBuyLetter();
+
+        return $result;
     }
 }

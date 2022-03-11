@@ -124,4 +124,33 @@ class Wordle
     {
         return $this->maxTries;
     }
+
+    /**
+     * Returns a list of all indexes that haven't been correct yet.
+     */
+    public function getNonGuessedIndexes(): array
+    {
+        $guesses = $this->getGuesses();
+        $currentWord = str_split($this->getCurrentWord());
+
+        $indexesGuessed = [];
+
+        foreach ($guesses as $guess) {
+            foreach(str_split($guess) as $index => $letter) {
+                if ($currentWord[$index] === $letter) {
+                    $indexesGuessed[] = $index;
+                }
+            }
+        }
+
+        $nonGuessed = [];
+
+        for ($i = 0; $i < count($currentWord); $i++) {
+            if (!in_array($i, $indexesGuessed, true)) {
+                $nonGuessed[] = $i;
+            }
+        }
+
+        return $nonGuessed;
+    }
 }
