@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Game\Game;
+use App\Game\Wordle;
 use App\Game\Player;
 use App\Game\Players\CraneNymphFjord;
 use App\Game\Players\QuickNymphBoard;
@@ -28,7 +28,7 @@ class AlgorithmPlayer extends Command
      */
     protected $description = 'Choose an algorithm and let it play the game multiple times and see the results.';
 
-    public function handle(Game $game): int
+    public function handle(Wordle $game): int
     {
         $algorithm = $this->choice('Please choose an algorithm', $this->getAlgorithms());
         $rounds = $this->ask('How many times should ' . ($algorithm === 'all' ? 'each' : 'this') . ' algorithm play the game', 500);
@@ -75,7 +75,7 @@ class AlgorithmPlayer extends Command
         return parent::SUCCESS;
     }
 
-    public function playAllAlgorithms(int $rounds, Game $game): int
+    public function playAllAlgorithms(int $rounds, Wordle $game): int
     {
         $rows = [];
 

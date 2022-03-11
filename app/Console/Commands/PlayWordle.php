@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Game\Enums\Result;
-use App\Game\Game;
+use App\Game\Wordle;
 use Exception;
 use Illuminate\Console\Command;
 
@@ -23,7 +23,7 @@ class PlayWordle extends Command
      */
     protected $description = 'Play Wordle';
 
-    public function handle(Game $game): int
+    public function handle(Wordle $game): int
     {
         $game->start();
 

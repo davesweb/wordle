@@ -2,13 +2,14 @@
 
 namespace App\Http\Livewire;
 
-use App\Game\Enums\Result;
-use App\Game\Game as WordleGame;
-use App\Game\Words\WordGenerator;
+use App\Game\Game as MainGame;
 use Exception;
 use Illuminate\View\View;
 use Livewire\Component;
 
+/**
+ * @property-read MainGame $game
+ */
 class Game extends Component
 {
     protected $listeners = [
@@ -31,14 +32,34 @@ class Game extends Component
 
     public array $letters = [];
 
+    public int $score = 0;
+
+    public int $scoreMutation = 0;
+
+    public int $lives = 0;
+
+    public int $livesMutation = 0;
+
     public function mount(): void
     {
-        $this->newGame();
+        $this->game->start();
+        $this->lives = $this->game->getCurrentLives();
+
+        $this->newWord();
     }
 
-    public function newGame(): void
+    public function newWord(): void
     {
-        $this->wordleGame->start();
+        if ($this->game->getCurrentLives() > 0) {
+            $this->game->startWordleGame();
+        } else {
+            $this->game->start();
+
+            $this->lives = $this->game->getCurrentLives();
+            $this->score = $this->game->getScore();
+            $this->livesMutation = 0;
+            $this->scoreMutation = 0;
+        }
 
         $this->guesses = [];
         $this->letters = [];
@@ -53,14 +74,14 @@ class Game extends Component
 
     public function addLetter(string $letter): void
     {
-        if (in_array(strtoupper($letter), range('A', 'Z'), true) && count($this->letters) < 5 && $this->wordleGame->isPlaying()) {
+        if (in_array(strtoupper($letter), range('A', 'Z'), true) && count($this->letters) < 5 && $this->game->isPlaying()) {
             $this->error = null;
             $this->success = null;
 
             $this->letters[] = strtoupper($letter);
         }
 
-        if ($letter === '⌫' || $letter === 'Backspace' && $this->wordleGame->isPlaying()) {
+        if ($letter === '⌫' || $letter === 'Backspace' && $this->game->isPlaying()) {
             $this->error = null;
             $this->success = null;
 
@@ -71,10 +92,10 @@ class Game extends Component
             $this->error = null;
             $this->success = null;
 
-            if ($this->wordleGame->isPlaying()) {
+            if ($this->game->isPlaying()) {
                 $this->guess();
             } else {
-                $this->newGame();
+                $this->newWord();
             }
         }
     }
@@ -95,30 +116,40 @@ class Game extends Component
         $guess = implode('', $this->letters);
 
         try {
-            $result = $this->wordleGame->guess($guess);
+            $result = $this->game->guess($guess);
 
-            $this->guesses[$guess] = $result;
+            $this->guesses[$guess] = $result->wordleResult;
 
             $this->letters = [];
 
-            if ($this->wordleGame->hasLost()) {
-                $this->error = 'You lost! The word was ' . $this->wordleGame->getCurrentWord() . '. Press enter to try again.';
+            if ($result->hasLost) {
+                $this->error = 'You lost! The word was ' . $result->currentWord . '. Press enter to try again.';
+
+                if ($result->lives < 1) {
+                    $this->error = 'Game over! The word was ' . $result->currentWord . '. Your score is ' . $result->score . '. Press enter to start again.';
+                }
             }
 
-            if ($this->wordleGame->hasWon()) {
+            if ($result->hasWon) {
                 $this->success = 'You won! Congratulations! Press enter for the next word.';
             }
+
+            $this->score = $result->score;
+            $this->scoreMutation = $result->scoreMutation;
+            $this->lives = $result->lives;
+            $this->livesMutation = $result->livesMutation;
         } catch (Exception $e) {
             $this->error = $e->getMessage();
         }
     }
 
-    public function getWordleGameProperty(): WordleGame
+    public function getGameProperty(): MainGame
     {
-        return new WordleGame(
-            resolve(WordGenerator::class),
-            resolve('session.store'),
-            $this->maxTries,
-        );
+        return new MainGame(resolve('session.store'), 3);
+    }
+
+    public function getWordProperty(): string
+    {
+        return $this->game->currentWord();
     }
 }

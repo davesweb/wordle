@@ -2,12 +2,12 @@
 
 namespace App\Game\Players;
 
-use App\Game\Game;
+use App\Game\Wordle;
 use App\Game\Words\WordProvider;
 
 class RandomWordPlayer extends WordPlayer
 {
-    public function solve(Game $game, WordProvider $dictionary, int &$tries = 0): string|array
+    public function solve(Wordle $game, WordProvider $dictionary, int &$tries = 0): string|array
     {
         $results = [];
         $options = $this->getRemainingPossibilities($dictionary, $results);

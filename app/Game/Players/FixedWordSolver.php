@@ -2,14 +2,14 @@
 
 namespace App\Game\Players;
 
-use App\Game\Game;
+use App\Game\Wordle;
 use App\Game\Words\WordProvider;
 
 abstract class FixedWordSolver extends WordPlayer
 {
     protected array $words = [];
 
-    public function solve(Game $game, WordProvider $dictionary, int &$tries = 0): string|array
+    public function solve(Wordle $game, WordProvider $dictionary, int &$tries = 0): string|array
     {
         $resultsSoFar = [];
         $remainingPossibilities = $this->getRemainingPossibilities($dictionary, $resultsSoFar);

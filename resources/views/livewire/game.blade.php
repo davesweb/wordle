@@ -1,17 +1,25 @@
 <div x-data="{init: document.addEventListener('keyup', e => window.Livewire.emit('addLetter', e.key), false)}">
-    <div id="options" class="flex justify-between mb-2 items-center">
-        <div>
+    <div id="game-data" class="flex justify-between mb-2 items-center text-slate-900 dark:text-slate-100">
+        <div class="w-1/3 relative">
+            Score: {{ $score }}
+            @if($scoreMutation > 0)
+                <div class="animated-score absolute right-0 -bottom-1/2 text-2xl text-orange-600 font-bold">+{{ $scoreMutation }}</div>
+            @endif
+        </div>
+        <div class="w-1/3 text-center">
             <button class="bg-slate-200 text-slate-900 border-slate-300 hover:bg-slate-300 hover:border-slate-400 dark:bg-slate-500 dark:text-slate-100 dark:border-slate-400 dark:border-2 dark:hover:bg-slate-600 dark:hover:border-slate-500 border p-2 rounded text-sm" wire:click="newGame()">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
                 </svg>
             </button>
         </div>
-        <div>
-            <button type="button" data-dark data-toggle="toggle" class="bg-gray-200 dark:bg-slate-700 relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500" role="switch" aria-checked="false">
-                <span class="sr-only">Dark mode</span>
-                <span aria-hidden="true" class="translate-x-0 pointer-events-none inline-block h-5 w-5 rounded-full bg-white dark:bg-slate-500 shadow transform ring-0 transition ease-in-out duration-200"></span>
-            </button>
+        <div class="flex w-1/3 place-content-end relative">
+            @for($i = 0; $i < $lives; $i++)
+                <x-heart />
+            @endfor
+            @if($livesMutation !== 0)
+                <div class="animated-score absolute right-0 -bottom-1/2 text-2xl text-red-500 font-bold">{{ $livesMutation > 0 ? '+' : '' }}{{ $livesMutation }}</div>
+            @endif
         </div>
     </div>
     <div id="guesses" class="guesses mb-5">
@@ -61,4 +69,5 @@
             </div>
         @endforeach
     </div>
+    <script>console.log('{{ $this->word }}');</script>
 </div>
