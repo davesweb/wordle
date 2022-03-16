@@ -12,14 +12,17 @@ class Wordle
     public function __construct(
         private WordGenerator $dictionary,
         private Store $session,
-        private int $maxTries = 6,
+        int $maxTries = 6,
     ) {
+        $this->session->put('defaultMaxTries', $maxTries);
+        $this->session->put('maxTries', $maxTries);
     }
 
     public function start(): void
     {
         $this->session->put('currentWord', $this->dictionary->getRandomWord());
         $this->session->put('guesses', []);
+        $this->session->put('maxTries', $this->session->get('defaultMaxTries'));
     }
 
     public function guess(string $guess): array
@@ -62,7 +65,7 @@ class Wordle
     public function hasLost(): bool
     {
         // If the maximum number of tries is reached and the word is still not correct, the game is lost
-        return $this->countGuesses() >= $this->maxTries && !$this->hasWon();
+        return $this->countGuesses() >= $this->getMaxTries() && !$this->hasWon();
     }
 
     public function isPlaying(): bool
@@ -122,7 +125,18 @@ class Wordle
 
     public function getMaxTries(): int
     {
-        return $this->maxTries;
+        return $this->session->get('maxTries');
+    }
+
+    public function incrementMaxTries(): int
+    {
+        $max = $this->getMaxTries();
+
+        ++$max;
+
+        $this->session->put('maxTries', $max);
+
+        return $max;
     }
 
     /**

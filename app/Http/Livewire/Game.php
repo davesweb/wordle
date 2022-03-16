@@ -4,6 +4,7 @@ namespace App\Http\Livewire;
 
 use App\Game\Game as MainGame;
 use Exception;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Livewire\Component;
 
@@ -17,6 +18,8 @@ class Game extends Component
     ];
 
     public int $maxTries = 6;
+
+    public int $defaultMaxTries = 6;
 
     public array $guesses = [];
 
@@ -41,6 +44,8 @@ class Game extends Component
     public int $livesMutation = 0;
 
     public bool $canBuyLetter = false;
+
+    public bool $turnBought = false;
 
     public function mount(): void
     {
@@ -68,6 +73,8 @@ class Game extends Component
         $this->success = null;
         $this->error = null;
         $this->canBuyLetter = $this->game->canBuyLetter();
+        $this->turnBought = false;
+        $this->maxTries = $this->defaultMaxTries;
     }
 
     public function render(): View
@@ -95,7 +102,7 @@ class Game extends Component
             $this->error = null;
             $this->success = null;
 
-            if ($this->game->isPlaying()) {
+            if ($this->game->isPlaying() && !$this->turnBought) {
                 $this->guess();
             } else {
                 $this->newWord();
@@ -121,16 +128,24 @@ class Game extends Component
         try {
             $result = $this->game->guess($guess);
 
+            Log::critical('result', (array)$result);
+
             $this->guesses[$guess] = $result->wordleResult;
 
             $this->letters = [];
 
-            if ($result->hasLost) {
+            if ($result->hasLost && !$result->canBuyTurn) {
+                $this->game->markLost();
+
                 $this->error = 'You lost! The word was ' . $result->currentWord . '. Press enter to try again.';
 
                 if ($result->lives < 1) {
                     $this->error = 'Game over! The word was ' . $result->currentWord . '. Your score is ' . $result->score . '. Press enter to start again.';
                 }
+            }
+
+            if ($result->hasLost && $result->canBuyTurn) {
+                $this->error = 'You lost! You can buy an extra turn for '.$this->game->getBuyTurnPrice().' points if you would like to keep going.';
             }
 
             if ($result->hasWon) {
@@ -142,7 +157,6 @@ class Game extends Component
             $this->lives = $result->lives;
             $this->livesMutation = $result->livesMutation;
             $this->canBuyLetter = $this->game->canBuyLetter();
-            //dd($this->game->canBuyLetter());
         } catch (Exception $e) {
             $this->error = $e->getMessage();
         }
@@ -175,5 +189,20 @@ class Game extends Component
         $this->canBuyLetter = $this->game->canBuyLetter();
 
         return $result;
+    }
+
+    public function buyTurn(): void
+    {
+        ++$this->maxTries;
+        $this->letters = [];
+        $this->scoreMutation = $this->game->getBuyTurnPrice();
+        $this->game->buyTurn();
+        $this->turnBought = true;
+        $this->error = null;
+    }
+
+    public function canBuyTurn(): bool
+    {
+        return $this->game->canBuyTurn();
     }
 }

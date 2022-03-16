@@ -8,6 +8,7 @@ use App\Game\Words\TextWordProvider;
 use App\Game\Words\WordGenerator;
 use App\Game\Words\WordProvider;
 use Illuminate\Session\Store;
+use Illuminate\Support\Facades\Log;
 
 final class Game
 {
@@ -39,6 +40,9 @@ final class Game
         $this->session->put('gamesPlayed', 0);
         $this->session->put('boughtLetter');
         $this->session->put('buyLetterPrice', $this->wordle->getMaxTries() * 25);
+        // TOdo: make word length variable
+        $this->session->put('buyTurnPrice', 0);//$this->calculateScore(5, $this->wordle->getMaxTries(), 1));
+        $this->session->put('boughtTurn', false);
     }
 
     public function createWordleGame(WordProvider $dictionary, int $maxTries = 6): Wordle
@@ -49,6 +53,7 @@ final class Game
     public function startWordleGame(): void
     {
         $this->session->put('boughtLetter');
+        $this->session->put('boughtTurn', false);
 
         $this->wordle->start();
     }
@@ -69,24 +74,27 @@ final class Game
 
             $this->session->put('boughtLetter');
 
-            return new Result($result, $newScore, $score, $newLives, $lives, true, false);
+            return new Result($result, $newScore, $score, $newLives, $lives, true, false, null, false);
         }
 
         if ($this->wordle->hasLost()) {
-            $newLives = $this->addLives(-1);
-
-            $this->session->put('boughtLetter');
-
-            return new Result($result, $this->getScore(), 0, $newLives, -1, false, true, $this->wordle->getCurrentWord());
+            return new Result($result, $this->getScore(), 0, $this->getCurrentLives(), 0, false, true, $this->wordle->getCurrentWord(), $this->canBuyTurn());
         }
 
         // Didn't win, didn't lose, still playing
-        return new Result($result, $this->getScore(), 0, $this->getCurrentLives(), 0, false, false);
+        return new Result($result, $this->getScore(), 0, $this->getCurrentLives(), 0, false, false, null, false);
+    }
+
+    public function markLost(): void
+    {
+        $this->addLives(-1);
+
+        $this->session->put('boughtLetter', false);
     }
 
     public function isPlaying(): bool
     {
-        return $this->wordle->isPlaying();
+        return $this->wordle->isPlaying() || $this->canBuyTurn() || $this->session->get('boughtTurn', false) === true;
     }
 
     private function addScore(int $points): int
@@ -185,6 +193,11 @@ final class Game
         return $this->session->get('buyLetterPrice');
     }
 
+    public function getBuyTurnPrice(): int
+    {
+        return $this->session->get('buyTurnPrice');
+    }
+
     public function buyLetter(): array
     {
         // We don't want to give the player a letter he already knows, that would defeat the purpose of buying a letter in the first place. So check all
@@ -210,5 +223,19 @@ final class Game
         $this->session->put('boughtLetter', [$randomIndex => strtoupper(str_split($this->currentWord())[$randomIndex])]);
 
         return $this->getBoughtLetter();
+    }
+
+    public function canBuyTurn(): bool
+    {
+        return
+            $this->wordle->hasLost() &&
+            $this->session->get('boughtTurn') !== true &&
+            $this->getScore() >= $this->getBuyTurnPrice();
+    }
+
+    public function buyTurn(): void
+    {
+        $this->session->put('boughtTurn', true);
+        $this->wordle->incrementMaxTries();
     }
 }

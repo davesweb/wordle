@@ -13,6 +13,7 @@ class Result
         public bool $hasWon,
         public bool $hasLost,
         public ?string $currentWord = null,
+        public bool $canBuyTurn = false,
     ) {
     }
 }

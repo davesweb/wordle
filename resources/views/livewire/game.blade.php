@@ -35,7 +35,7 @@
                 @endforeach
             </div>
         @endforeach
-        @if(count($this->guesses) < 6)
+        @if(count($this->guesses) < $this->maxTries)
             <div class="row grid grid-cols-5 gap-5 mb-3">
                 @foreach($this->letters as $letterIndex => $letter)
                     <div class="letter border rounded border-slate-400 dark:border-slate-600 dark:border-2 dark:text-slate-100 p-4 text-center font-medium text-lg guess @if($this->getBoughtLetter($letterIndex) !== null && $this->getBoughtLetter($letterIndex) === $letter) bg-green-500 text-white @endif">{{ str($letter)->upper() }}</div>
@@ -57,7 +57,7 @@
             </div>
         @endfor
     </div>
-    <div id="messages" class="messages mb-5 flex justify-center">
+    <div id="messages" class="messages {{ $error || $success ? 'mb-5' : '' }} flex justify-center">
         @if($error)
             <div class="border border-red-600 bg-red-200 text-red-600 p-2 rounded dark:border-red-600 dark:bg-red-800 dark:text-red-100">
                 {{ $error }}
@@ -69,6 +69,11 @@
             </div>
         @endif
     </div>
+    @if($this->canBuyTurn())
+        <div class="text-center mb-5">
+            <button wire:click="buyTurn()" class="letter border rounded p-2 font-medium grow mr-1 dark:border-2 border-slate-300 bg-slate-300 dark:bg-slate-600 dark:text-slate-100 dark:border-slate-500 disabled:dark:text-slate-400 disabled:cursor-not-allowed">Buy an extra turn</button>
+        </div>
+    @endif
     <div class="keyboard mb-5">
         @foreach($this->keyboard as $row => $letters)
             <div class="row flex mb-2">
@@ -78,12 +83,9 @@
             </div>
         @endforeach
     </div>
-    <div class="options mb-5 flex justify-between items-center">
+    <div class="options mb-5 flex justify-center items-center">
         <div>
             <button wire:click="buyLetter()" class="letter border rounded p-2 font-medium grow mr-1 dark:border-2 border-slate-300 bg-slate-300 dark:bg-slate-600 dark:text-slate-100 dark:border-slate-500 disabled:dark:text-slate-400 disabled:cursor-not-allowed" {{ !$this->canBuyLetter ? 'disabled' : '' }}>Buy a letter</button>
-        </div>
-        <div>
-            <button class="letter border rounded p-2 font-medium grow mr-1 dark:border-2 border-slate-300 bg-slate-300 dark:bg-slate-600 dark:text-slate-100 dark:border-slate-500 disabled:dark:text-slate-400 disabled:cursor-not-allowed" disabled>Buy an extra turn</button>
         </div>
     </div>
     <script>console.log('{{ $this->word }}');</script>
